@@ -12,6 +12,7 @@
     ],
     "require":      {
         "php": ">=5.5.9",
+        "symfony/http-foundation": "dev-master"
     },
     "autoload": {
         "psr-4": {"Moon\\": "src/"}
