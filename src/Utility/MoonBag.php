@@ -29,22 +29,14 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Moon\Container;
+namespace Moon\Utility;
 
 
-class Container implements \ArrayAccess
+class MoonBag implements \ArrayAccess
 {
 
-    private $isLocked = false;
+    protected $bag = array();
 
-    protected $bag = [];
-
-    public function __construct($values = array())
-    {
-        foreach ($values as $key => $value) {
-            $this->offsetSet($key, $value);
-        }
-    }
 
     /**
      * @param mixed $offset
@@ -66,7 +58,7 @@ class Container implements \ArrayAccess
     public function offsetGet($offset)
     {
         if (!isset($this->bag[$offset])) {
-            throw new \InvalidArgumentException($offset.' not registred in container.');
+            throw new \InvalidArgumentException($offset.' not exist.');
         }
         $value = $this->bag[$offset];
         if ($value instanceof \Closure) {
@@ -86,9 +78,6 @@ class Container implements \ArrayAccess
      */
     public function offsetSet($offset, $value)
     {
-        if ($this->isLocked && isset($this->bag[$offset])) {
-            throw new \LogicException('Cannot edit locked container '.$offset);
-        }
         $this->bag[$offset] = $value;
     }
 
@@ -101,16 +90,10 @@ class Container implements \ArrayAccess
      */
     public function offsetUnset($offset)
     {
-        if ($this->isLocked) {
-            throw new \LogicException('Cannot edit locked container');
-        }
         if ($this->offsetExists($offset)) {
             unset($this->bag[$offset]);
         }
     }
 
-    public function lock()
-    {
-        $this->isLocked = true;
-    }
 }
+ 

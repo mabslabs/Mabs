@@ -1,15 +1,41 @@
 <?php
 /**
- * Created in Moon.
- * User: Mohamed Aymen Ben Slimane <aymen.kernel@gmail.com>
- * Date: 10/07/15
- * Time: 06:17 م
+ * Moon framework
+ *
+ * @author      Mohamed Aymen Ben Slimane <aymen.kernel@gmail.com>
+ * @copyright   2015 Mohamed Aymen Ben Slimane
+ *
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2015 Mohamed Aymen Ben Slimane
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 namespace Moon;
 
 use Moon\Container\Container;
 use Moon\Dispatcher\EventDispatcher;
+use Moon\Router\Route;
+use Moon\Router\RouteCollection;
+use Moon\Router\Router;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -78,15 +104,15 @@ class Application
             }
 
             $response = $this->handleRequest();
-
             $this->dispatch(Events::MOON_ON_TERMINATE, $response);
-            $response->send();
-            $this->dispatch(Events::MOON_ON_FINISH);
 
         } catch (\Exception $e) {
             $this->dispatch(Events::MOON_HANDLE_EXCEPTION, $e);
-            var_dump($e);
+            $response = new Response('500 internal server error', 500);
         }
+
+        $response->send();
+        $this->dispatch(Events::MOON_ON_FINISH);
     }
 
     public function handleRequest(Request $request = null)
@@ -94,12 +120,45 @@ class Application
         if (!$request) {
             $request = $this->container['request'];
         }
+
         $this->dispatch(Events::MOON_HANDLE_REQUEST, $request);
 
-
-        $response = new Response('Hello', 200, array('Content-Type' => 'text/html'));;
+        $response = $this->container['router']->handleRequest($request);
+        if (! $response instanceof Response) {
+            $response = new Response('500 internal server error', 500);
+        }
 
         return $response;
+    }
+
+    public function get($pattern, $callback, $routeName = null)
+    {
+        $this->mount($pattern, $callback, $routeName, array(Request::METHOD_GET));
+    }
+
+    public function post($pattern, $callback, $routeName = null)
+    {
+        $this->mount($pattern, $callback, $routeName, array(Request::METHOD_POST));
+    }
+
+    public function put($pattern, $callback, $routeName = null)
+    {
+        $this->mount($pattern, $callback, $routeName, array(Request::METHOD_PUT));
+    }
+
+    public function delete($pattern, $callback, $routeName = null)
+    {
+        $this->mount($pattern, $callback, $routeName, array(Request::METHOD_DELETE));
+    }
+
+    public function mount($pattern, $callback, $routeName = null, $methodes = array())
+    {
+        $route = new Route();
+        $route->setPath($pattern)
+            ->setName($routeName)
+            ->setCallback($callback);
+
+        $this->container['router']->mount($route, $methodes);
     }
 
     public function getContainer()
@@ -113,14 +172,25 @@ class Application
         $this->dispatch(Events::MOON_ON_LOCKED);
     }
 
+    public function getAdapters()
+    {
+        return array(
+            new \Moon\Adapter\SessionServiceAdapter(),
+        );
+    }
+
     protected function load()
     {
-        $this->container['event_dispatcher'] = function (Container $c) {
-            return new EventDispatcher($c);
+        $this->container['event_dispatcher'] = function (Container $container) {
+            return new EventDispatcher($container);
         };
 
         $this->container['request'] = function () {
             return Request::createFromGlobals();
+        };
+
+        $this->container['router'] = function (Container $container) {
+            return new Router();
         };
 
         foreach ($this->getAdapters() as $adapter) {
@@ -137,12 +207,5 @@ class Application
             $adapter->boot($this->container);
         }
         $this->dispatch(Events::MOON_ON_BOOT);
-    }
-
-    public function getAdapters()
-    {
-        return array(
-            new \Moon\Adapter\SessionServiceAdapter(),
-        );
     }
 }
