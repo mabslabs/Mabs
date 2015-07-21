@@ -51,7 +51,7 @@ class EventDispatcher
     public function dispatch($eventName, $data = null)
     {
         $listeners = $this->getListenersByEvent($eventName);
-        if (!$listeners) {
+        if (empty($listeners)) {
             return $this;
         }
         foreach ($listeners as $event) {
@@ -66,7 +66,7 @@ class EventDispatcher
      * @param string $eventName
      * @return EventDispatcher
      */
-    public final function detach($eventName)
+    final public function detach($eventName)
     {
         if (isset($this->listeners[$eventName])) {
             unset($this->listeners[$eventName]);
@@ -82,7 +82,7 @@ class EventDispatcher
      * @param int $priority
      * @return EventDispatcher
      */
-    public final function register($eventName, $callback, $priority)
+    final public function register($eventName, $callback, $priority)
     {
         $eventName = trim($eventName);
 
@@ -132,6 +132,6 @@ class EventDispatcher
             return $this->listeners[$eventName];
         }
 
-        return false;
+        return array();
     }
 }
