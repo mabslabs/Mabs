@@ -100,7 +100,7 @@ class Route
     {
         $path = trim($this->path, '/');
         $patterns = array('/{(\w+)\?}/', '/{(\w+)}/');
-        $replacements = array('(\w+)', '(\w*)');
+        $replacements = array('(\w*)', '(\w+)');
 
         return preg_replace($patterns, $replacements, $path);
     }
