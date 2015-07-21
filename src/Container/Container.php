@@ -1,6 +1,6 @@
 <?php
 /**
- * Moon framework
+ * Mabs framework
  *
  * @author      Mohamed Aymen Ben Slimane <aymen.kernel@gmail.com>
  * @copyright   2015 Mohamed Aymen Ben Slimane
@@ -29,7 +29,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Moon\Container;
+namespace Mabs\Container;
 
 
 class Container implements \ArrayAccess

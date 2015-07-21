@@ -1,6 +1,6 @@
 <?php
 /**
- * Moon framework
+ * Mabs framework
  *
  * @author      Mohamed Aymen Ben Slimane <aymen.kernel@gmail.com>
  * @copyright   2015 Mohamed Aymen Ben Slimane
@@ -29,17 +29,17 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Moon;
+namespace Mabs;
 
 
 class Events
 {
-    const MOON_BEFORE_LOAD      = 'moon.before.load';
-    const MOON_ON_LOCKED        = 'moon.on.locked';
-    const MOON_ON_BOOT        = 'moon.on.boot';
-    const MOON_HANDLE_EXCEPTION = 'moon.handle.exception';
-    const MOON_HANDLE_REQUEST   = 'moon.handle.request';
-    const MOON_ON_TERMINATE     = 'moon.on.terminate';
-    const MOON_ON_FINISH        = 'moon.on.finish';
+    const MABS_BEFORE_LOAD      = 'mabs.before.load';
+    const MABS_ON_LOCKED        = 'mabs.on.locked';
+    const MABS_ON_BOOT          = 'mabs.on.boot';
+    const MABS_HANDLE_EXCEPTION = 'mabs.handle.exception';
+    const MABS_HANDLE_REQUEST   = 'mabs.handle.request';
+    const MABS_ON_TERMINATE     = 'mabs.on.terminate';
+    const MABS_ON_FINISH        = 'mabs.on.finish';
 }
  

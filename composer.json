@@ -1,7 +1,7 @@
 {
-    "name":         "mabslabs/Moon",
-    "description":  "The Moon micro framework",
-    "keywords":     ["moon", "php", "framework", "microframework"],
+    "name":         "mabslabs/Mabs",
+    "description":  "The Mabs micro framework",
+    "keywords":     ["Mabs", "mabs", "moon", "php", "framework", "microframework"],
     "license":      "MIT",
     "type": "library",
     "authors":      [
@@ -15,7 +15,7 @@
         "symfony/http-foundation": "dev-master"
     },
     "autoload": {
-        "psr-4": {"Moon\\": "src/"}
+        "psr-4": {"Mabs\\": "src/"}
     }
 }
 

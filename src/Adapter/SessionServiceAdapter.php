@@ -1,6 +1,6 @@
 <?php
 /**
- * Moon framework
+ * Mabs framework
  *
  * @author      Mohamed Aymen Ben Slimane <aymen.kernel@gmail.com>
  * @copyright   2015 Mohamed Aymen Ben Slimane
@@ -29,12 +29,12 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Moon\Adapter;
+namespace Mabs\Adapter;
 
 
-use Moon\Container\Container;
-use Moon\ServiceAdapterInterface;
-use Moon\Events;
+use Mabs\Container\Container;
+use Mabs\ServiceAdapterInterface;
+use Mabs\Events;
 use Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeFileSessionHandler;
 use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
@@ -70,10 +70,10 @@ class SessionServiceAdapter implements ServiceAdapterInterface
 
     public function boot(Container $container)
     {
-        $container['event_dispatcher']->register(Events::MOON_ON_BOOT, array($this, 'onMoonBoot'), 128);
+        $container['event_dispatcher']->register(Events::MABS_ON_BOOT, array($this, 'onMabsBoot'), 128);
     }
 
-    public function onMoonBoot(Container $container)
+    public function onMabsBoot(Container $container)
     {
         $container['request']->setSession($container['session']);
     }

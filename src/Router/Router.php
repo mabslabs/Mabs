@@ -1,6 +1,6 @@
 <?php
 /**
- * Moon framework
+ * Mabs framework
  *
  * @author      Mohamed Aymen Ben Slimane <aymen.kernel@gmail.com>
  * @copyright   2015 Mohamed Aymen Ben Slimane
@@ -29,7 +29,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Moon\Router;
+namespace Mabs\Router;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -71,11 +71,10 @@ class Router
     public function handleRequest(Request $request)
     {
         $methode = $request->getMethod();
-        $path = $request->getPathInfo();
 
         foreach ($this->routeCollection as $route) {
 
-            if ($this->match($path, $route)) {
+            if ($this->match($request, $route)) {
 
                 if (isset($this->routeCollection[$route->getName()])) {
                     return $this->executeController($this->routeCollection[$route->getName()]->getCallback(), $request);
@@ -91,19 +90,27 @@ class Router
         return new Response('404 Not Found', 404);
     }
 
-    protected function executeController($controller, $request)
+    protected function executeController($controller, Request $request)
     {
-        return call_user_func_array($controller, array($request));
+        return call_user_func_array($controller, $request->query->all());
     }
 
-    protected function match($currentPath, $route)
+    protected function match(Request $request,Route $route)
     {
-        $currentPath = trim($currentPath, '/');
+        $currentPath = trim($request->getPathInfo(), '/');
         $routePath = trim($route->getPath(), '/');
 
+        $regex = $route->getRegularExpression();
+
         if ($currentPath == $routePath) {
+
+            return true;
+        } else if (!empty($regex) && preg_match('#^' . $regex . '$#', $currentPath, $matches)) {
+            $request->query->add($route->getNamesParameters($matches));
+
             return true;
         }
+
         return false;
     }
 

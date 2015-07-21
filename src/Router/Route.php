@@ -1,6 +1,6 @@
 <?php
 /**
- * Moon framework
+ * Mabs framework
  *
  * @author      Mohamed Aymen Ben Slimane <aymen.kernel@gmail.com>
  * @copyright   2015 Mohamed Aymen Ben Slimane
@@ -29,7 +29,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Moon\Router;
+namespace Mabs\Router;
 
 
 class Route
@@ -94,5 +94,30 @@ class Route
         $this->callback = $callback;
 
         return $this;
+    }
+
+    public function getRegularExpression()
+    {
+        $path = trim($this->path, '/');
+        $patterns = array('/{(\w+)\?}/', '/{(\w+)}/');
+        $replacements = array('(\w+)', '(\w*)');
+
+        return preg_replace($patterns, $replacements, $path);
+    }
+
+    public function getNamesParameters(array $matchedValues = array())
+    {
+        $path = trim($this->path, '/');
+        $pattern = '/{(\w+)\??}/';
+
+        preg_match_all($pattern, $path, $matches);
+        $params = array();
+        if (isset($matches[1]) && is_array($matches[1])) {
+            foreach ($matches[1] as $index => $matche) {
+                $params[$matche] = isset($matchedValues[$index + 1]) ? $matchedValues[$index + 1] : null;
+            }
+        }
+
+        return $params;
     }
 }

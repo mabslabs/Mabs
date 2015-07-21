@@ -1,6 +1,6 @@
 <?php
 /**
- * Moon framework
+ * Mabs framework
  *
  * @author      Mohamed Aymen Ben Slimane <aymen.kernel@gmail.com>
  * @copyright   2015 Mohamed Aymen Ben Slimane
@@ -29,13 +29,13 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Moon;
+namespace Mabs;
 
-use Moon\Container\Container;
-use Moon\Dispatcher\EventDispatcher;
-use Moon\Router\Route;
-use Moon\Router\RouteCollection;
-use Moon\Router\Router;
+use Mabs\Container\Container;
+use Mabs\Dispatcher\EventDispatcher;
+use Mabs\Router\Route;
+use Mabs\Router\RouteCollection;
+use Mabs\Router\Router;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -104,15 +104,15 @@ class Application
             }
 
             $response = $this->handleRequest();
-            $this->dispatch(Events::MOON_ON_TERMINATE, $response);
+            $this->dispatch(Events::MABS_ON_TERMINATE, $response);
 
         } catch (\Exception $e) {
-            $this->dispatch(Events::MOON_HANDLE_EXCEPTION, $e);
+            $this->dispatch(Events::MABS_HANDLE_EXCEPTION, $e);
             $response = new Response('500 internal server error', 500);
         }
 
         $response->send();
-        $this->dispatch(Events::MOON_ON_FINISH);
+        $this->dispatch(Events::MABS_ON_FINISH);
     }
 
     public function handleRequest(Request $request = null)
@@ -121,11 +121,11 @@ class Application
             $request = $this->container['request'];
         }
 
-        $this->dispatch(Events::MOON_HANDLE_REQUEST, $request);
+        $this->dispatch(Events::MABS_HANDLE_REQUEST, $request);
 
         $response = $this->container['router']->handleRequest($request);
         if (! $response instanceof Response) {
-            $response = new Response('500 internal server error', 500);
+            $response = new Response($response, 200);
         }
 
         return $response;
@@ -169,13 +169,13 @@ class Application
     public function lock()
     {
         $this->container->lock(true);
-        $this->dispatch(Events::MOON_ON_LOCKED);
+        $this->dispatch(Events::MABS_ON_LOCKED);
     }
 
     public function getAdapters()
     {
         return array(
-            new \Moon\Adapter\SessionServiceAdapter(),
+            new \Mabs\Adapter\SessionServiceAdapter(),
         );
     }
 
@@ -206,6 +206,6 @@ class Application
         foreach ($this->adapters as $adapter) {
             $adapter->boot($this->container);
         }
-        $this->dispatch(Events::MOON_ON_BOOT);
+        $this->dispatch(Events::MABS_ON_BOOT);
     }
 }
