@@ -35,7 +35,7 @@ namespace Mabs\Dispatcher;
 class EventDispatcher
 {
 
-    private $listeners = [];
+    private $listeners = array();
 
     private $container;
 

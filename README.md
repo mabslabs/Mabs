@@ -7,3 +7,7 @@ Mabs is a PHP micro framework, speedy, light easy to learn .
 ### Install
 
 You may install the Mabs Framework with Composer (recommended).
+
+```bash
+$ composer require 'mabslabs/mabs'
+```

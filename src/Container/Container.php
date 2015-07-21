@@ -37,7 +37,7 @@ class Container implements \ArrayAccess
 
     private $isLocked = false;
 
-    protected $bag = [];
+    protected $bag = array();
 
     public function __construct($values = array())
     {
