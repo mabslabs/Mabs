@@ -124,7 +124,7 @@ class EventDispatcher
 
     /**
      * @param $eventName
-     * @return bool | array
+     * @return array
      */
     public function getListenersByEvent($eventName)
     {
