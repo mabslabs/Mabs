@@ -1,5 +1,5 @@
 {
-    "name":         "mabslabs/Mabs",
+    "name":         "mabslabs/mabs",
     "description":  "The Mabs micro framework",
     "keywords":     ["Mabs", "mabs", "moon", "php", "framework", "microframework"],
     "license":      "MIT",
