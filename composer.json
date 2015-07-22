@@ -12,7 +12,7 @@
     ],
     "require":      {
         "php": ">=5.3.9",
-        "symfony/http-foundation": "v2.*"
+        "symfony/http-foundation": "~2.0"
     },
     "autoload": {
         "psr-4": {"Mabs\\": "src/"}
