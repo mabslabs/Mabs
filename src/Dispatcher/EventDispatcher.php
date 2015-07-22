@@ -55,7 +55,7 @@ class EventDispatcher
             return $this;
         }
         foreach ($listeners as $event) {
-            call_user_func_array($event['callback'], [$this->container, $data]);
+            call_user_func_array($event['callback'], array($this->container, $data));
         }
 
         return $this;
