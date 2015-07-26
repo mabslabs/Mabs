@@ -98,8 +98,8 @@ class Route
 
     public function getRegularExpression()
     {
-        $path = trim($this->path, '/');
-        $patterns = array('/{(\w+)\?}/', '/{(\w+)}/');
+        $path = $this->path;
+        $patterns = array('/\((\w+)\?\)/', '/\((\w+)\)/');
         $replacements = array('(\w*)', '(\w+)');
 
         return preg_replace($patterns, $replacements, $path);
@@ -107,8 +107,8 @@ class Route
 
     public function getNamesParameters(array $matchedValues = array())
     {
-        $path = trim($this->path, '/');
-        $pattern = '/{(\w+)\??}/';
+        $path = $this->path;
+        $pattern = '/\((\w+)\??\)/';
 
         preg_match_all($pattern, $path, $matches);
         $params = array();

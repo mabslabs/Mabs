@@ -90,6 +90,16 @@ class Router
         return new Response('404 Not Found', 404);
     }
 
+    public function generateUrl($routeName, $params = array())
+    {
+        if (!isset($this->routeCollection[$routeName])) {
+            throw new \RuntimeException('route '.$routeName.' not found');
+        }
+        $path = $this->routeCollection[$routeName]->getPath();
+
+        return ($params);
+    }
+
     protected function executeController($controller, Request $request)
     {
         return call_user_func_array($controller, $request->query->all());
@@ -97,15 +107,18 @@ class Router
 
     protected function match(Request $request,Route $route)
     {
-        $currentPath = trim($request->getPathInfo(), '/');
-        $routePath = trim($route->getPath(), '/');
+        $currentPath = ltrim($request->getPathInfo(), '/');
+        if ($currentPath[strlen($currentPath)-1] != '/') {
+            $currentPath .= '/';
+        }
+        $routePath = $route->getPath();
 
         $regex = $route->getRegularExpression();
 
         if ($currentPath == $routePath) {
 
             return true;
-        } else if (!empty($regex) && preg_match('#^' . $regex . '$#', $currentPath, $matches)) {
+        } else if (!empty($regex) && preg_match('#^' . $regex . '\/?$#', $currentPath, $matches)) {
             $request->query->add($route->getNamesParameters($matches));
 
             return true;
