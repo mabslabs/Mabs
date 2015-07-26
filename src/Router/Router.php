@@ -96,7 +96,7 @@ class Router
             throw new \RuntimeException('route '.$routeName.' not found');
         }
         $path = $this->routeCollection[$routeName]->getPath();
-
+        // TODO fix url generation by route name
         return ($params);
     }
 
@@ -108,7 +108,7 @@ class Router
     protected function match(Request $request,Route $route)
     {
         $currentPath = ltrim($request->getPathInfo(), '/');
-        if ($currentPath[strlen($currentPath)-1] != '/') {
+        if (empty($currentPath) || $currentPath[strlen($currentPath)-1] != '/') {
             $currentPath .= '/';
         }
         $routePath = $route->getPath();
