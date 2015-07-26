@@ -93,7 +93,7 @@ class Router
     public function generateUrl($routeName, $params = array())
     {
         if (!isset($this->routeCollection[$routeName])) {
-            throw new \RuntimeException('route '.$routeName.' not found');
+            throw new \RuntimeException('route ' . $routeName . ' not found');
         }
         $path = $this->routeCollection[$routeName]->getPath();
         // TODO fix url generation by route name
@@ -105,12 +105,9 @@ class Router
         return call_user_func_array($controller, $request->query->all());
     }
 
-    protected function match(Request $request,Route $route)
+    protected function match(Request $request, Route $route)
     {
-        $currentPath = ltrim($request->getPathInfo(), '/');
-        if (empty($currentPath) || $currentPath[strlen($currentPath)-1] != '/') {
-            $currentPath .= '/';
-        }
+        $currentPath = $this->getCurrentPath($request);
         $routePath = $route->getPath();
 
         $regex = $route->getRegularExpression();
@@ -127,12 +124,21 @@ class Router
         return false;
     }
 
+    private function getCurrentPath(Request $request)
+    {
+        $currentPath = ltrim($request->getPathInfo(), '/');
+        if (empty($currentPath) || $currentPath[strlen($currentPath) - 1] != '/') {
+            $currentPath .= '/';
+        }
+
+        return $currentPath;
+    }
+
     private function getUniqueRouteKey($methode, $routeName)
     {
         if (empty($methode)) {
             return $routeName;
         }
-        return strtolower($methode).'::'.$routeName;
+        return strtolower($methode) . '::' . $routeName;
     }
 }
- 
