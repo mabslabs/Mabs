@@ -52,10 +52,11 @@ class Router
         Request::METHOD_CONNECT,
     );
 
-    public function __construct()
-    {
-    }
-
+    /**
+     * mount controller for given route
+     * @param $route
+     * @param array $methodes
+     */
     public function mount($route, $methodes = array())
     {
         if (empty($methodes)) {
@@ -68,6 +69,11 @@ class Router
         }
     }
 
+    /**
+     * handle Request and get the response
+     * @param Request $request
+     * @return mixed|Response
+     */
     public function handleRequest(Request $request)
     {
         $methode = $request->getMethod();
@@ -90,14 +96,22 @@ class Router
         return new Response('404 Not Found', 404);
     }
 
+    /**
+     * generate Url for the given route name
+     * @param $routeName
+     * @param array $params
+     * @return mixed
+     */
     public function generateUrl($routeName, $params = array())
     {
-        if (!isset($this->routeCollection[$routeName])) {
-            throw new \RuntimeException('route ' . $routeName . ' not found');
+        $route = $this->getRouteByName($routeName);
+        $path = $route->getPath();
+
+        foreach ($params as $key => $value) {
+            $path = str_replace(array('('.$key.')','('.$key.'?)'), $value, $path);
         }
-        $path = $this->routeCollection[$routeName]->getPath();
-        // TODO fix url generation by route name
-        return ($params);
+
+        return $path;
     }
 
     protected function executeController($controller, Request $request)
@@ -122,6 +136,21 @@ class Router
         }
 
         return false;
+    }
+
+    private function getRouteByName($routeName)
+    {
+        if (isset($this->routeCollection[$routeName])) {
+            return $this->routeCollection[$routeName];
+        }
+
+        foreach ($this->routeCollection as $route) {
+            if ($route->getName() == $routeName) {
+                return $route;
+            }
+        }
+
+        throw new \RuntimeException('route ' . $routeName . ' not found');
     }
 
     private function getCurrentPath(Request $request)
