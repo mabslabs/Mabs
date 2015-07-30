@@ -16,6 +16,25 @@ $ composer require 'mabslabs/mabs'
 
 ### Rapid start
 
+### Rapid start
+
+
+```php
+// web/index.php
+<?php
+
+require_once __DIR__.'/../vendor/autoload.php';
+
+$app = new Mabs\Application();
+
+$app->get('hello/(name)', function ($name) {
+
+    return 'Hello '.$name;
+})->run();
+
+```
+
+### More details
 
 ```php
 // web/index.php
