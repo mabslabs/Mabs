@@ -16,8 +16,6 @@ $ composer require 'mabslabs/mabs'
 
 ### Rapid start
 
-### Rapid start
-
 
 ```php
 // web/index.php

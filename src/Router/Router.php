@@ -55,7 +55,7 @@ class Router
     /**
      * mount controller for given route
      * @param $route
-     * @param \Mabs\Router $router
+     * @return \Mabs\Router
      */
     public function mount($route, $methodes = array())
     {
