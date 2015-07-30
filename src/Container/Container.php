@@ -109,8 +109,20 @@ class Container implements \ArrayAccess
         }
     }
 
+    /**
+     * lock Container
+     */
     public function lock()
     {
         $this->isLocked = true;
+    }
+
+    /**
+     * check if Container is locked
+     * @return bool
+     */
+    public function isLocked()
+    {
+        return $this->isLocked === true;
     }
 }

@@ -55,7 +55,7 @@ class Router
     /**
      * mount controller for given route
      * @param $route
-     * @param array $methodes
+     * @param \Mabs\Router $router
      */
     public function mount($route, $methodes = array())
     {
@@ -67,6 +67,8 @@ class Router
                 $this->routeCollection[$key] = $route;
             }
         }
+
+        return $this;
     }
 
     /**
