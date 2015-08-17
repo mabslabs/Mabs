@@ -14,7 +14,7 @@ You may install the Mabs Framework with Composer (recommended).
 $ composer require 'mabslabs/mabs'
 ```
 
-### Rapid start
+### Quick start
 
 
 ```php
