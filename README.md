@@ -1,6 +1,6 @@
 # Mabs Framework
 
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/mabslabs/Mabs/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/mabslabs/Mabs/?branch=master) [![Code Climate](https://codeclimate.com/github/mabslabs/Mabs/badges/gpa.svg)](https://codeclimate.com/github/mabslabs/Mabs)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/mabslabs/Mabs/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/mabslabs/Mabs/?branch=master) [![Code Climate](https://codeclimate.com/github/mabslabs/Mabs/badges/gpa.svg)](https://codeclimate.com/github/mabslabs/Mabs) [![Build Status](https://travis-ci.org/mabslabs/Mabs.svg?branch=master)](https://travis-ci.org/mabslabs/Mabs)
 
 Mabs is a PHP micro framework, speedy, light and easy to learn .
 
