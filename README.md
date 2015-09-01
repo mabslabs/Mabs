@@ -4,6 +4,15 @@
 
 Mabs is a PHP micro framework, speedy, light and easy to learn .
 
+## Features
+
+-	Container
+-	Event dispatcher
+-	Routing
+-	HttpFoundation  (Symfony2 component)
+-	An easy way to extend PHP libraries
+
+
 ## Getting Started
 
 ### Install
