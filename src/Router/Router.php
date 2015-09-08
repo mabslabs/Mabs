@@ -38,6 +38,8 @@ class Router
 {
     protected $routeCollection = array();
 
+    protected $routes = array();
+
     public static $httpMethodes = array(
         Request::METHOD_POST,
         Request::METHOD_HEAD,
@@ -55,17 +57,20 @@ class Router
     /**
      * mount controller for given route
      * @param $route
+     * @param array $methodes
      * @return \Mabs\Router
      */
     public function mount($route, $methodes = array())
     {
         if (empty($methodes)) {
-            $this->routeCollection[$route->getName()] = $route;
-        } else {
-            foreach ($methodes as $methode) {
-                $key = $this->getUniqueRouteKey($methode, $route->getName());
-                $this->routeCollection[$key] = $route;
+            $methodes = self::$httpMethodes;
+        }
+        $this->routes[$route->getName()] = $route;
+        foreach ($methodes as $methode) {
+            if (!isset($this->routeCollection[$methode])) {
+                $this->routeCollection[$methode] = array();
             }
+            $this->routeCollection[$methode][$route->getName()] = $route;
         }
 
         return $this;
@@ -80,17 +85,16 @@ class Router
     {
         $methode = $request->getMethod();
 
-        foreach ($this->routeCollection as $route) {
+        if (!isset($this->routeCollection[$methode])) {
+            return new Response('404 Not Found', 404);
+        }
+        $routes = $this->routeCollection[$methode];
+        foreach ($routes as $route) {
 
             if ($this->match($request, $route)) {
 
-                if (isset($this->routeCollection[$route->getName()])) {
-                    return $this->executeController($this->routeCollection[$route->getName()]->getCallback(), $request);
-                }
-
-                $key = $this->getUniqueRouteKey($methode, $route->getName());
-                if (isset($this->routeCollection[$key])) {
-                    return $this->executeController($this->routeCollection[$key]->getCallback(), $request);
+                if (isset($routes[$route->getName()])) {
+                    return $this->executeController($routes[$route->getName()]->getCallback(), $request);
                 }
             }
         }
@@ -110,7 +114,7 @@ class Router
         $path = $route->getPath();
 
         foreach ($params as $key => $value) {
-            $path = str_replace(array('('.$key.')','('.$key.'?)'), $value, $path);
+            $path = str_replace(array('(' . $key . ')', '(' . $key . '?)'), $value, $path);
         }
 
         return $path;
@@ -142,14 +146,8 @@ class Router
 
     private function getRouteByName($routeName)
     {
-        if (isset($this->routeCollection[$routeName])) {
-            return $this->routeCollection[$routeName];
-        }
-
-        foreach ($this->routeCollection as $route) {
-            if ($route->getName() == $routeName) {
-                return $route;
-            }
+        if (isset($this->routes[$routeName])) {
+            return $this->routes[$routeName];
         }
 
         throw new \RuntimeException('route ' . $routeName . ' not found');
@@ -163,13 +161,5 @@ class Router
         }
 
         return $currentPath;
-    }
-
-    private function getUniqueRouteKey($methode, $routeName)
-    {
-        if (empty($methode)) {
-            return $routeName;
-        }
-        return strtolower($methode) . '::' . $routeName;
     }
 }
