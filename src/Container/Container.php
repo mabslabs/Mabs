@@ -52,7 +52,7 @@ class Container implements \ArrayAccess
      *
      * @return boolean true on success or false on failure.
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset) : bool
     {
         return isset($this->bag[$offset]);
     }
@@ -63,7 +63,7 @@ class Container implements \ArrayAccess
      *
      * @return mixed Can return all value types.
      */
-    public function offsetGet($offset)
+    public function offsetGet($offset) : mixed
     {
         if (!isset($this->bag[$offset])) {
             throw new \InvalidArgumentException($offset.' not registred in container.');
@@ -84,7 +84,7 @@ class Container implements \ArrayAccess
      *
      * @return void
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value) : void
     {
         if ($this->isLocked && isset($this->bag[$offset])) {
             throw new \LogicException('Cannot edit locked container '.$offset);
@@ -99,7 +99,7 @@ class Container implements \ArrayAccess
      *
      * @return void
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset) : void
     {
         if ($this->isLocked) {
             throw new \LogicException('Cannot edit locked container');
