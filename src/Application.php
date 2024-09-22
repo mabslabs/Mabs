@@ -41,7 +41,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Application
 {
-    const VERSION = '1.0.0-dev';
+    const VERSION = '2.1.1';
 
     protected $container;
 
@@ -50,6 +50,8 @@ class Application
     protected $debug;
 
     protected $loaded = false;
+
+    protected $booted = false;
 
     public function __construct($debug = false)
     {
@@ -66,8 +68,6 @@ class Application
         $this->load();
 
         $this->lock();
-
-        $this->boot();
     }
 
     /**
@@ -121,13 +121,27 @@ class Application
     }
 
     /**
+     * check if all component are booted
+     * @return bool
+     */
+    public function isBooted()
+    {
+        return $this->booted === true;
+    }
+
+    /**
      * run applicaton : handle the request and send response
      */
     public function run()
     {
         try {
+
             if (!$this->isLoaded()) {
                 $this->load();
+            }
+
+            if (!$this->isBooted()) {
+                $this->boot();
             }
 
             $response = $this->handleRequest();
@@ -166,7 +180,7 @@ class Application
     /**
      * add GET route
      * @param string $pattern
-     * @param Closure|string $callback
+     * @param \Closure|string $callback
      * @param null|string $routeName
      * @return Application
      */
@@ -178,7 +192,7 @@ class Application
     /**
      * add POST route
      * @param string $pattern
-     * @param Closure|string $callback
+     * @param \Closure|string $callback
      * @param null|string $routeName
      * @return Application
      */
@@ -190,7 +204,7 @@ class Application
     /**
      * add PUT route
      * @param string $pattern
-     * @param Closure|string $callback
+     * @param \Closure|string $callback
      * @param null|string $routeName
      * @return Application
      */
@@ -202,7 +216,7 @@ class Application
     /**
      * add DELETE route
      * @param string $pattern
-     * @param Closure|string $callback
+     * @param \Closure|string $callback
      * @param null|string $routeName
      * @return Application
      */
@@ -214,7 +228,7 @@ class Application
     /**
      * add a route
      * @param string $pattern
-     * @param Closure|string $callback
+     * @param \Closure|string $callback
      * @param null|string $routeName
      * @param array HTTP Methode
      * @return Application
@@ -241,7 +255,7 @@ class Application
     }
 
     /**
-     * lock the conatiner
+     * lock the container
      */
     public function lock()
     {
@@ -294,5 +308,6 @@ class Application
             $adapter->boot($this->container);
         }
         $this->dispatch(Events::MABS_ON_BOOT);
+        $this->booted = true;
     }
 }

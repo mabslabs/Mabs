@@ -1,66 +1,84 @@
 <?php
-/**
- * Mabs framework
- *
- * @author      Mohamed Aymen Ben Slimane <aymen.kernel@gmail.com>
- * @copyright   2015 Mohamed Aymen Ben Slimane
- *
- * The MIT License (MIT)
- * 
- * Copyright (c) 2015 Mohamed Aymen Ben Slimane
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 
 namespace Mabs\Tests;
 
-
-class ApplicationTest extends \PHPUnit_Framework_TestCase
+use Mabs\Application;
+use Mabs\Container\Container;
+use Mabs\Dispatcher\EventDispatcher;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use \PHPUnit\Framework\TestCase;
+class ApplicationTest extends TestCase
 {
-    /**
-     * Test version constant is string
-     */
-    public function testHasVersionConstant()
+    protected $app;
+
+    protected function setUp(): void
     {
-        $this->assertTrue(is_string(\Mabs\Application::VERSION), 'test application has version');
+        $this->app = new Application(true); // Activer le mode debug pour les tests
     }
 
-    /**
-     * Test mode debug
-     */
-    public function testModeDebug()
+    public function testConstructorSetsDebugMode()
     {
-        $app = new \Mabs\Application(true);
-        $this->assertTrue($app->isDebugMode(), 'test active Mode debug');
+        $app = new Application(true);
+        $this->assertTrue($app->isDebugMode());
 
-        $app = new \Mabs\Application();
-        $this->assertFalse($app->isDebugMode(), 'test inactive Mode debug');
+        $app = new Application(false);
+        $this->assertFalse($app->isDebugMode());
     }
 
-    /**
-     * Test running application
-     */
-    public function testRunningApplication()
+    public function testLoadInitializesComponents()
     {
-        $app = new \Mabs\Application(true);
-        $this->assertTrue($app->isLoaded(), 'test all components are loaded');
-        $this->assertTrue($app->getContainer()->isLocked(), 'test if the Container is locked');
+        $this->assertInstanceOf(Container::class, $this->app->getContainer());
+    }
+
+    public function testRunHandlesRequestSuccessfully()
+    {
+
+        $request = Request::create('/test');
+
+        $response = $this->app->handleRequest($request);
+
+        $this->assertInstanceOf(Response::class, $response);
+    }
+
+    public function testGetMethodMountsRoute()
+    {
+        $this->app->get('example', function () {
+            return new Response('Hello, World!');
+        });
+
+        $request = Request::create('/example');
+        $response = $this->app->handleRequest($request);
+
+        $this->assertEquals('Hello, World!', $response->getContent());
+    }
+
+    public function testEventDispatcher()
+    {
+        $eventCalled = false;
+
+        $this->app->on('test.event', function () use (&$eventCalled) {
+            $eventCalled = true;
+        });
+
+        $this->app->dispatch('test.event');
+
+        $this->assertTrue($eventCalled);
+    }
+
+    public function testDetachRemovesEventListener()
+    {
+        $eventCalled = false;
+
+        $callback = function () use (&$eventCalled) {
+            $eventCalled = true;
+        };
+
+        $this->app->on('test.event', $callback);
+        $this->app->detach('test.event');
+
+        $this->app->dispatch('test.event');
+
+        $this->assertFalse($eventCalled);
     }
 }
