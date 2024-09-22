@@ -3,6 +3,7 @@
     "description":  "The Mabs micro framework",
     "keywords":     ["Mabs", "mabs", "moon", "php", "framework", "microframework"],
     "license":      "MIT",
+    "version": "2.1.0",
     "type": "library",
     "authors":      [
         {
