@@ -31,17 +31,11 @@
 
 namespace Mabs;
 
-use Psr\Container\ContainerInterface;
+use Mabs\Container\Container;
 
 interface ServiceAdapterInterface
 {
-    /**
-     * Register services into the container.
-     */
-    public function load(ContainerInterface $container): void;
-
-    /**
-     * Boot services after registration.
-     */
-    public function boot(ContainerInterface $container): void;
+    public function load(Container $container);
+    public function boot(Container $container);
 }
+ 

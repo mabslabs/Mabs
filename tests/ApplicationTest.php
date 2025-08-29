@@ -1,75 +1,84 @@
 <?php
 
-declare(strict_types=1);
+namespace Mabs\Tests;
 
 use Mabs\Application;
 use Mabs\Container\Container;
-use Mabs\Router\Router;
 use Mabs\Dispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use PHPUnit\Framework\TestCase;
-
-final class ApplicationTest extends TestCase
+use \PHPUnit\Framework\TestCase;
+class ApplicationTest extends TestCase
 {
-    private Application $app;
+    protected $app;
 
     protected function setUp(): void
     {
-        $this->app = new Application(debug: true);
+        $this->app = new Application(true); // Activer le mode debug pour les tests
     }
 
-    public function testAppStartsInDebugMode(): void
+    public function testConstructorSetsDebugMode()
     {
-        $this->assertTrue($this->app->isDebugMode());
+        $app = new Application(true);
+        $this->assertTrue($app->isDebugMode());
+
+        $app = new Application(false);
+        $this->assertFalse($app->isDebugMode());
     }
 
-    public function testContainerIsInstanceOfContainer(): void
+    public function testLoadInitializesComponents()
     {
         $this->assertInstanceOf(Container::class, $this->app->getContainer());
     }
 
-    public function testApplicationHandlesRequestAndReturnsResponse(): void
+    public function testRunHandlesRequestSuccessfully()
     {
-        // Mock Router
-        $mockRouter = $this->createMock(Router::class);
-        $mockResponse = new Response('Hello World', 200);
-        $mockRouter->method('handleRequest')->willReturn($mockResponse);
 
-        $this->app->getContainer()['router'] = fn() => $mockRouter;
+        $request = Request::create('/test');
 
-        $response = $this->app->handleRequest();
+        $response = $this->app->handleRequest($request);
 
         $this->assertInstanceOf(Response::class, $response);
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('Hello World', $response->getContent());
     }
 
-    public function testEventDispatching(): void
+    public function testGetMethodMountsRoute()
     {
-        $mockDispatcher = $this->createMock(EventDispatcher::class);
-        $mockDispatcher->expects($this->once())
-            ->method('dispatch')
-            ->with('custom_event', ['key' => 'value'])
-            ->willReturn('dispatched');
+        $this->app->get('example', function () {
+            return new Response('Hello, World!');
+        });
 
-        $this->app->getContainer()['event_dispatcher'] = fn() => $mockDispatcher;
+        $request = Request::create('/example');
+        $response = $this->app->handleRequest($request);
 
-        $result = $this->app->dispatch('custom_event', ['key' => 'value']);
-        $this->assertSame('dispatched', $result);
+        $this->assertEquals('Hello, World!', $response->getContent());
     }
 
-    public function testRouteMounting(): void
+    public function testEventDispatcher()
     {
-        $mockRouter = $this->createMock(Router::class);
-        $mockRouter->expects($this->once())
-            ->method('mount')
-            ->with(
-                $this->isInstanceOf(\Mabs\Router\Route::class),
-                [Request::METHOD_GET]
-            );
+        $eventCalled = false;
 
-        $this->app->getContainer()['router'] = fn() => $mockRouter;
-        $this->app->get('/test', fn() => 'ok');
+        $this->app->on('test.event', function () use (&$eventCalled) {
+            $eventCalled = true;
+        });
+
+        $this->app->dispatch('test.event');
+
+        $this->assertTrue($eventCalled);
+    }
+
+    public function testDetachRemovesEventListener()
+    {
+        $eventCalled = false;
+
+        $callback = function () use (&$eventCalled) {
+            $eventCalled = true;
+        };
+
+        $this->app->on('test.event', $callback);
+        $this->app->detach('test.event');
+
+        $this->app->dispatch('test.event');
+
+        $this->assertFalse($eventCalled);
     }
 }

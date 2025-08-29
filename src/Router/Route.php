@@ -29,65 +29,95 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-declare(strict_types=1);
-
 namespace Mabs\Router;
 
-final class Route
+
+class Route
 {
-    private string $path;
-    private mixed $handler;
-    private ?string $name = null;
+    private $path;
+    private $callback;
+    private $name;
 
-    public function __construct(string $path, mixed $handler)
-    {
-        $this->path = $path;
-        $this->handler = $handler;
-    }
-
-    public function path(): string
+    /**
+     * @return mixed
+     */
+    public function getPath()
     {
         return $this->path;
     }
 
-    public function name(): string
+    /**
+     * @param mixed $path
+     */
+    public function setPath($path)
     {
-        return $this->name ??= spl_object_hash($this);
+        $this->path = $path;
+
+        return $this;
     }
 
-    public function withName(string $name): self
+    /**
+     * @return mixed
+     */
+    public function getName()
+    {
+        if ($this->name == null) {
+            $this->name =  spl_object_hash($this);
+        }
+
+        return $this->name;
+    }
+
+    /**
+     * @param mixed $name
+     */
+    public function setName($name)
     {
         $this->name = $name;
+
         return $this;
     }
 
-    public function handler(): mixed
+    /**
+     * @return mixed
+     */
+    public function getCallback()
     {
-        return $this->handler;
+        return $this->callback;
     }
 
-    public function withHandler(mixed $handler): self
+    /**
+     * @param mixed $callback
+     */
+    public function setCallback($callback)
     {
-        $this->handler = $handler;
+        $this->callback = $callback;
+
         return $this;
     }
 
-    public function toRegex(): string
+    public function getRegularExpression()
     {
-        return preg_replace(
-            ['/\{(\w+)\?\}/', '/\{(\w+)\}/'],
-            ['(\w*)', '(\w+)'],
-            $this->path
-        ) ?? $this->path;
+        $path = $this->path;
+        $patterns = array('/\((\w+)\?\)/', '/\((\w+)\)/');
+        $replacements = array('(\w*)', '(\w+)');
+
+        return preg_replace($patterns, $replacements, $path);
     }
 
-    public function extractParameters(array $matches): array
+    public function getNamesParameters(array $matchedValues = array())
     {
-        preg_match_all('/\{(\w+)\??\}/', $this->path, $paramNames);
+        $path = $this->path;
+        $pattern = '/\((\w+)\??\)/';
 
-        return array_combine(
-            $paramNames[1],
-            array_slice($matches, 1, count($paramNames[1])) + array_fill(0, count($paramNames[1]), null)
-        ) ?: [];
+        preg_match_all($pattern, $path, $matches);
+        $params = array();
+        if (isset($matches[1]) && is_array($matches[1])) {
+            foreach ($matches[1] as $index => $matche) {
+                $params[$matche] = isset($matchedValues[$index + 1]) ? $matchedValues[$index + 1] : null;
+            }
+        }
+
+        return $params;
     }
 }
