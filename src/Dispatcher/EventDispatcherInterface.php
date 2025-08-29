@@ -29,19 +29,10 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Mabs;
+namespace Mabs\Dispatcher;
 
-use Psr\Container\ContainerInterface;
-
-interface ServiceAdapterInterface
+interface EventDispatcherInterface
 {
-    /**
-     * Register services into the container.
-     */
-    public function load(ContainerInterface $container): void;
-
-    /**
-     * Boot services after registration.
-     */
-    public function boot(ContainerInterface $container): void;
+    public function register(string $eventName, callable $callback, int $priority = 0);
+    public function dispatch(string $eventName, $data = null);
 }

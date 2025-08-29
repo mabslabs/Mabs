@@ -29,21 +29,21 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+declare(strict_types=1);
+
 namespace Mabs\Router;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class Router
+final class Router
 {
-    protected $routeCollection = array();
+    private array $routeCollection = [];
+    private array $routes = [];
 
-    protected $routes = array();
-
-    public static $httpMethodes = array(
-        Request::METHOD_POST,
-        Request::METHOD_HEAD,
+    public const HTTP_METHODS = [
         Request::METHOD_GET,
+        Request::METHOD_HEAD,
         Request::METHOD_POST,
         Request::METHOD_PUT,
         Request::METHOD_PATCH,
@@ -52,114 +52,87 @@ class Router
         Request::METHOD_OPTIONS,
         Request::METHOD_TRACE,
         Request::METHOD_CONNECT,
-    );
+    ];
 
-    /**
-     * mount controller for given route
-     * @param $route
-     * @param array $methodes
-     * @return \Mabs\Router
-     */
-    public function mount($route, $methodes = array())
+    public function mount(Route $route, array $methods = []): self
     {
-        if (empty($methodes)) {
-            $methodes = self::$httpMethodes;
-        }
-        $this->routes[$route->getName()] = $route;
-        foreach ($methodes as $methode) {
-            if (!isset($this->routeCollection[$methode])) {
-                $this->routeCollection[$methode] = array();
-            }
-            $this->routeCollection[$methode][$route->getName()] = $route;
+        $methods = $methods ?: self::HTTP_METHODS;
+        $this->routes[$route->name()] = $route;
+
+        foreach ($methods as $method) {
+            $this->routeCollection[$method][$route->name()] = $route;
         }
 
         return $this;
     }
 
-    /**
-     * handle Request and get the response
-     * @param Request $request
-     * @return mixed|Response
-     */
-    public function handleRequest(Request $request)
+    public function handle(Request $request): Response
     {
-        $methode = $request->getMethod();
+        $method = $request->getMethod();
 
-        if (!isset($this->routeCollection[$methode])) {
+        if (!isset($this->routeCollection[$method])) {
             return new Response('404 Not Found', 404);
         }
-        $routes = $this->routeCollection[$methode];
-        foreach ($routes as $route) {
 
+        foreach ($this->routeCollection[$method] as $route) {
             if ($this->match($request, $route)) {
-
-                if (isset($routes[$route->getName()])) {
-                    return $this->executeController($routes[$route->getName()]->getCallback(), $request);
-                }
+                return $this->execute($route->handler(), $request);
             }
         }
 
         return new Response('404 Not Found', 404);
     }
 
-    /**
-     * generate Url for the given route name
-     * @param $routeName
-     * @param array $params
-     * @return mixed
-     */
-    public function generateUrl($routeName, $params = array())
+    public function generateUrl(string $routeName, array $params = []): string
     {
         $route = $this->getRouteByName($routeName);
-        $path = $route->getPath();
+        $path = $route->path();
 
         foreach ($params as $key => $value) {
-            $path = str_replace(array('(' . $key . ')', '(' . $key . '?)'), $value, $path);
+            $path = str_replace(['{' . $key . '}', '{' . $key . '?}'], $value, $path);
         }
 
         return $path;
     }
 
-    protected function executeController($controller, Request $request)
+    private function match(Request $request, Route $route): bool
     {
-        return call_user_func_array($controller, $request->query->all());
-    }
+        $currentPath = $this->normalizePath($request->getPathInfo());
+        $routePath = $route->path();
+        $regex = $route->toRegex();
 
-    protected function match(Request $request, Route $route)
-    {
-        $currentPath = $this->getCurrentPath($request);
-        $routePath = $route->getPath();
-
-        $regex = $route->getRegularExpression();
-
-        if ($currentPath == $routePath) {
-
+        if ($currentPath === $routePath) {
             return true;
-        } else if (!empty($regex) && preg_match('#^' . $regex . '\/?$#', $currentPath, $matches)) {
-            $request->query->add($route->getNamesParameters($matches));
+        }
 
+        if (!empty($regex) && preg_match('#^' . $regex . '/?$#', $currentPath, $matches)) {
+            $params = $route->extractParameters($matches);
+            $request->query->add($params);
             return true;
         }
 
         return false;
     }
 
-    private function getRouteByName($routeName)
+    private function execute(mixed $handler, Request $request): Response
     {
-        if (isset($this->routes[$routeName])) {
-            return $this->routes[$routeName];
-        }
+        $result = is_callable($handler)
+            ? call_user_func_array($handler, $request->query->all())
+            : $handler;
 
-        throw new \RuntimeException('route ' . $routeName . ' not found');
+        return $result instanceof Response
+            ? $result
+            : new Response((string) $result);
     }
 
-    private function getCurrentPath(Request $request)
+    private function getRouteByName(string $routeName): Route
     {
-        $currentPath = ltrim($request->getPathInfo(), '/');
-        if (empty($currentPath) || $currentPath[strlen($currentPath) - 1] != '/') {
-            $currentPath .= '/';
-        }
+        return $this->routes[$routeName] ?? throw new \RuntimeException("Route '{$routeName}' not found.");
+    }
 
-        return $currentPath;
+    private function normalizePath(string $path): string
+    {
+        $normalized = ltrim($path, '/');
+        return str_ends_with($normalized, '/') ? $normalized : $normalized . '/';
     }
 }

@@ -29,113 +29,76 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+declare(strict_types=1);
+
 namespace Mabs;
 
+use Closure;
 use Mabs\Container\Container;
 use Mabs\Dispatcher\EventDispatcher;
 use Mabs\Router\Route;
-use Mabs\Router\RouteCollection;
 use Mabs\Router\Router;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Mabs\Adapter\SessionServiceAdapter;
 
-class Application
+final class Application
 {
-    const VERSION = '2.1.1';
+    public const VERSION = '3.0.0';
 
-    protected $container;
+    private readonly Container $container;
+    private readonly \SplObjectStorage $adapters;
+    private bool $debug;
+    private bool $loaded = false;
+    private bool $booted = false;
 
-    protected $adapters;
-
-    protected $debug;
-
-    protected $loaded = false;
-
-    protected $booted = false;
-
-    public function __construct($debug = false)
+    public function __construct(bool $debug = false)
     {
-        if ($debug) {
-            ini_set('display_errors', 'on');
-            error_reporting(E_ALL);
-        } else {
-            error_reporting(0);
-        }
         $this->debug = $debug;
+
+        ini_set('display_errors', $debug ? 'on' : 'off');
+        error_reporting($debug ? E_ALL : 0);
+
         $this->adapters = new \SplObjectStorage();
         $this->container = new Container();
 
         $this->load();
-
         $this->lock();
     }
 
-    /**
-     * check if debug mode is active
-     * @return bool
-     */
-    public function isDebugMode()
+    public function isDebugMode(): bool
     {
-        return $this->debug === true;
+        return $this->debug;
     }
 
-    /**
-     * attach an action for an event
-     * @param string $eventName
-     * @param callable $callback
-     * @param int $priority
-     * @return \Mabs\EventDispatcher
-     */
-    public function on($eventName, \Closure $callback, $priority = 0)
+    public function on(string $eventName, Closure $callback, int $priority = 0): EventDispatcher
     {
         return $this->container['event_dispatcher']->register($eventName, $callback, $priority);
     }
 
-    /**
-     * detach registered actions for an event
-     * @param string $eventName
-     * @return \Mabs\EventDispatcher
-     */
-    public function detach($eventName)
+    public function detach(string $eventName): EventDispatcher
     {
         return $this->container['event_dispatcher']->detach($eventName);
     }
 
-    /**
-     * @param string $eventName
-     * @param mixed $data
-     * @return mixed
-     */
-    public function dispatch($eventName, $data = null)
+    public function dispatch(string $eventName, mixed $data = null): mixed
     {
         return $this->container['event_dispatcher']->dispatch($eventName, $data);
     }
 
-    /**
-     * check if all component are loaded
-     * @return bool
-     */
-    public function isLoaded()
+    public function isLoaded(): bool
     {
-        return $this->loaded === true;
+        return $this->loaded;
     }
 
-    /**
-     * check if all component are booted
-     * @return bool
-     */
-    public function isBooted()
+    public function isBooted(): bool
     {
-        return $this->booted === true;
+        return $this->booted;
     }
 
-    /**
-     * run applicaton : handle the request and send response
-     */
-    public function run()
+    public function run(): void
     {
         try {
-
             if (!$this->isLoaded()) {
                 $this->load();
             }
@@ -147,7 +110,7 @@ class Application
             $response = $this->handleRequest();
             $this->dispatch(Events::MABS_ON_TERMINATE, $response);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->dispatch(Events::MABS_HANDLE_EXCEPTION, $e);
             $response = new Response('500 internal server error', 500);
         }
@@ -156,140 +119,72 @@ class Application
         $this->dispatch(Events::MABS_ON_FINISH);
     }
 
-    /**
-     * handle a Request
-     * @param Request $request
-     * @return Response
-     */
-    public function handleRequest(Request $request = null)
+    public function handleRequest(?Request $request = null): Response
     {
-        if (!$request) {
-            $request = $this->container['request'];
-        }
+        $request ??= $this->container['request'];
 
         $this->dispatch(Events::MABS_HANDLE_REQUEST, $request);
 
         $response = $this->container['router']->handleRequest($request);
-        if (! $response instanceof Response) {
-            $response = new Response($response, 200);
-        }
-
-        return $response;
+        return $response instanceof Response ? $response : new Response((string)$response, 200);
     }
 
-    /**
-     * add GET route
-     * @param string $pattern
-     * @param \Closure|string $callback
-     * @param null|string $routeName
-     * @return Application
-     */
-    public function get($pattern, $callback, $routeName = null)
+    public function get(string $pattern, Closure|string $callback, ?string $routeName = null): self
     {
-        return $this->mount($pattern, $callback, $routeName, array(Request::METHOD_GET));
+        return $this->mount($pattern, $callback, $routeName, [Request::METHOD_GET]);
     }
 
-    /**
-     * add POST route
-     * @param string $pattern
-     * @param \Closure|string $callback
-     * @param null|string $routeName
-     * @return Application
-     */
-    public function post($pattern, $callback, $routeName = null)
+    public function post(string $pattern, Closure|string $callback, ?string $routeName = null): self
     {
-        return $this->mount($pattern, $callback, $routeName, array(Request::METHOD_POST));
+        return $this->mount($pattern, $callback, $routeName, [Request::METHOD_POST]);
     }
 
-    /**
-     * add PUT route
-     * @param string $pattern
-     * @param \Closure|string $callback
-     * @param null|string $routeName
-     * @return Application
-     */
-    public function put($pattern, $callback, $routeName = null)
+    public function put(string $pattern, Closure|string $callback, ?string $routeName = null): self
     {
-        return $this->mount($pattern, $callback, $routeName, array(Request::METHOD_PUT));
+        return $this->mount($pattern, $callback, $routeName, [Request::METHOD_PUT]);
     }
 
-    /**
-     * add DELETE route
-     * @param string $pattern
-     * @param \Closure|string $callback
-     * @param null|string $routeName
-     * @return Application
-     */
-    public function delete($pattern, $callback, $routeName = null)
+    public function delete(string $pattern, Closure|string $callback, ?string $routeName = null): self
     {
-        return $this->mount($pattern, $callback, $routeName, array(Request::METHOD_DELETE));
+        return $this->mount($pattern, $callback, $routeName, [Request::METHOD_DELETE]);
     }
 
-    /**
-     * add a route
-     * @param string $pattern
-     * @param \Closure|string $callback
-     * @param null|string $routeName
-     * @param array HTTP Methode
-     * @return Application
-     */
-    public function mount($pattern, $callback, $routeName = null, $methodes = array())
-    {
-        $route = new Route();
-        $route->setPath($pattern)
+    public function mount(
+        string $pattern,
+        Closure|string $callback,
+        ?string $routeName = null,
+        array $methods = []
+    ): self {
+        $route = (new Route())
+            ->setPath($pattern)
             ->setName($routeName)
             ->setCallback($callback);
 
-        $this->container['router']->mount($route, $methodes);
-
+        $this->container['router']->mount($route, $methods);
         return $this;
     }
 
-    /**
-     * get the DI container
-     * @return Container
-     */
-    public function getContainer()
+    public function getContainer(): Container
     {
         return $this->container;
     }
 
-    /**
-     * lock the container
-     */
-    public function lock()
+    public function lock(): void
     {
         $this->container->lock(true);
         $this->dispatch(Events::MABS_ON_LOCKED);
     }
 
-    /**
-     * list of active components
-     * @return array
-     */
-    public function getAdapters()
+    public function getAdapters(): array
     {
-        return array(
-            new \Mabs\Adapter\SessionServiceAdapter(),
-        );
+        return [new SessionServiceAdapter()];
     }
 
-    /**
-     * load all component in the DI Container
-     */
-    protected function load()
+    protected function load(): void
     {
-        $this->container['event_dispatcher'] = function (Container $container) {
-            return new EventDispatcher($container);
-        };
-
-        $this->container['request'] = function () {
-            return Request::createFromGlobals();
-        };
-
-        $this->container['router'] = function (Container $container) {
-            return new Router();
-        };
+        $this->container['event_dispatcher'] = fn(Container $container) => new EventDispatcher($container);
+        $this->container['request'] = fn() => Request::createFromGlobals();
+        $this->container['router'] = fn(Container $container) => new Router();
 
         foreach ($this->getAdapters() as $adapter) {
             $adapter->load($this->container);
@@ -299,14 +194,12 @@ class Application
         $this->loaded = true;
     }
 
-    /**
-     * initialize all components
-     */
-    protected function boot()
+    protected function boot(): void
     {
         foreach ($this->adapters as $adapter) {
             $adapter->boot($this->container);
         }
+
         $this->dispatch(Events::MABS_ON_BOOT);
         $this->booted = true;
     }

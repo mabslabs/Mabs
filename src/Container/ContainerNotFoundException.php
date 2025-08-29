@@ -29,19 +29,10 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Mabs;
+ declare(strict_types=1);
 
-use Psr\Container\ContainerInterface;
+ namespace Mabs\Container;
 
-interface ServiceAdapterInterface
-{
-    /**
-     * Register services into the container.
-     */
-    public function load(ContainerInterface $container): void;
+ use Psr\Container\NotFoundExceptionInterface;
 
-    /**
-     * Boot services after registration.
-     */
-    public function boot(ContainerInterface $container): void;
-}
+final class ContainerNotFoundException extends \Exception implements NotFoundExceptionInterface {}
