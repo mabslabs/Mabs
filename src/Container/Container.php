@@ -29,165 +29,100 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-declare(strict_types=1);
-
 namespace Mabs\Container;
 
-use Closure;
-use ArrayAccess;
-use InvalidArgumentException;
-use LogicException;
-use Psr\Container\ContainerInterface;
 
-final class Container implements ContainerInterface, ArrayAccess
+class Container implements \ArrayAccess
 {
-    private bool $isLocked = false;
 
-    /** @var array<string, mixed> */
-    private array $entries = [];
+    private $isLocked = false;
 
-    /**
-     * @param array<string, mixed> $services Initial services.
-     */
-    public function __construct(array $services = [])
+    protected $bag = array();
+
+    public function __construct($values = array())
     {
-        foreach ($services as $key => $value) {
-            $this->set($key, $value);
+        foreach ($values as $key => $value) {
+            $this->offsetSet($key, $value);
         }
     }
 
     /**
-     * Retrieve a service by ID.
+     * @param mixed $offset
+     * An offset to check for.
      *
-     * @param string $id
-     * @return mixed
-     * @throws InvalidArgumentException if service is not defined.
+     * @return boolean true on success or false on failure.
      */
-    public function get(string $id): mixed
+    public function offsetExists($offset) : bool
     {
-        if (!array_key_exists($id, $this->entries)) {
-            throw new InvalidArgumentException("Service \"$id\" not found.");
-        }
-
-        $value = $this->entries[$id];
-
-        if ($value instanceof Closure) {
-            $this->entries[$id] = $value = $value($this);
-        }
-
-        return $value;
+        return isset($this->bag[$offset]);
     }
 
     /**
-     * Check if a service exists.
+     * @param mixed $offset
+     * The offset to retrieve.
      *
-     * @param string $id
-     * @return bool
+     * @return mixed Can return all value types.
      */
-    public function has(string $id): bool
+    public function offsetGet($offset) : mixed
     {
-        return array_key_exists($id, $this->entries);
+        if (!isset($this->bag[$offset])) {
+            throw new \InvalidArgumentException($offset.' not registred in container.');
+        }
+        $value = $this->bag[$offset];
+        if ($value instanceof \Closure) {
+            $this->bag[$offset] = $value($this);
+        }
+
+        return $this->bag[$offset];
     }
 
     /**
-     * Store a service in the container.
-     *
-     * @param string $id
+     * @param mixed $offset <p>
+     * The offset to assign the value to.
      * @param mixed $value
+     * The value to set.
+     *
      * @return void
-     * @throws LogicException if the container is locked.
      */
-    public function set(string $id, mixed $value): void
+    public function offsetSet($offset, $value) : void
     {
-        if ($this->isLocked && array_key_exists($id, $this->entries)) {
-            throw new LogicException("Cannot modify locked container entry \"$id\".");
+        if ($this->isLocked && isset($this->bag[$offset])) {
+            throw new \LogicException('Cannot edit locked container '.$offset);
         }
-
-        $this->entries[$id] = $value;
+        $this->bag[$offset] = $value;
     }
 
     /**
-     * Remove a service from the container.
+     * Offset to unset
+     * @param mixed $offset
+     * The offset to unset.
      *
-     * @param string $id
      * @return void
-     * @throws LogicException if the container is locked.
      */
-    public function unset(string $id): void
+    public function offsetUnset($offset) : void
     {
         if ($this->isLocked) {
-            throw new LogicException("Cannot remove from a locked container.");
+            throw new \LogicException('Cannot edit locked container');
         }
-
-        unset($this->entries[$id]);
+        if ($this->offsetExists($offset)) {
+            unset($this->bag[$offset]);
+        }
     }
 
     /**
-     * Locks the container, preventing further modifications.
+     * lock Container
      */
-    public function lock(): void
+    public function lock()
     {
         $this->isLocked = true;
     }
 
     /**
-     * Check if the container is locked.
+     * check if Container is locked
+     * @return bool
      */
-    public function isLocked(): bool
+    public function isLocked()
     {
-        return $this->isLocked;
-    }
-
-    /**
-     * Create a new container with optional services and locking.
-     */
-    public static function create(array $services = [], bool $lock = false): self
-    {
-        $container = new self($services);
-        if ($lock) {
-            $container->lock();
-        }
-        return $container;
-    }
-
-    /**
-     * Clone the container with new services.
-     *
-     * @param array<string, mixed> $services
-     * @return self
-     */
-    public function with(array $services): self
-    {
-        $clone = clone $this;
-        $clone->isLocked = false;
-        $clone->entries = [...$this->entries];
-
-        foreach ($services as $key => $value) {
-            $clone->set($key, $value);
-        }
-
-        return $clone;
-    }
-
-    // --- ArrayAccess Implementation ---
-
-    public function offsetExists(mixed $offset): bool
-    {
-        return $this->has((string) $offset);
-    }
-
-    public function offsetGet(mixed $offset): mixed
-    {
-        return $this->get((string) $offset);
-    }
-
-    public function offsetSet(mixed $offset, mixed $value): void
-    {
-        $this->set((string) $offset, $value);
-    }
-
-    public function offsetUnset(mixed $offset): void
-    {
-        $this->unset((string) $offset);
+        return $this->isLocked === true;
     }
 }
