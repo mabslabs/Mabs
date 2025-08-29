@@ -31,15 +31,16 @@
 
 namespace Mabs;
 
-
 class Events
 {
-    const MABS_BEFORE_LOAD      = 'mabs.before.load';
-    const MABS_ON_LOCKED        = 'mabs.on.locked';
-    const MABS_ON_BOOT          = 'mabs.on.boot';
-    const MABS_HANDLE_EXCEPTION = 'mabs.handle.exception';
-    const MABS_HANDLE_REQUEST   = 'mabs.handle.request';
-    const MABS_ON_TERMINATE     = 'mabs.on.terminate';
-    const MABS_ON_FINISH        = 'mabs.on.finish';
+    public const string MABS_BEFORE_LOAD      = 'mabs.before.load';
+    public const string MABS_ON_LOCKED        = 'mabs.on.locked';
+    public const string MABS_ON_BOOT          = 'mabs.on.boot';
+    public const string MABS_HANDLE_EXCEPTION = 'mabs.handle.exception';
+    public const string MABS_HANDLE_REQUEST   = 'mabs.handle.request';
+    public const string MABS_ON_TERMINATE     = 'mabs.on.terminate';
+    public const string MABS_ON_FINISH        = 'mabs.on.finish';
+
+    private function __construct()
+    {}
 }
- 

@@ -29,109 +29,114 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Mabs\Dispatcher;
+ declare(strict_types=1);
 
+ namespace Mabs\Dispatcher;
 
-class EventDispatcher
-{
-
-    private $listeners = array();
-
-    private $container;
-
-    public function __construct($container)
-    {
-        $this->container = $container;
-    }
-    /**
-     * @param string $eventName
-     * @param mixed $data
-     * @return EventDispatcher
-     */
-    public function dispatch($eventName, $data = null)
-    {
-        $listeners = $this->getListenersByEvent($eventName);
-        if (empty($listeners)) {
-            return $this;
-        }
-        foreach ($listeners as $event) {
-            call_user_func_array($event['callback'], array($this->container, $data));
-        }
-
-        return $this;
-    }
-
-    /**
-     *
-     * @param string $eventName
-     * @return EventDispatcher
-     */
-    final public function detach($eventName)
-    {
-        if (isset($this->listeners[$eventName])) {
-            unset($this->listeners[$eventName]);
-        }
-
-        return $this;
-    }
-
-    /**
-     *
-     * @param string $eventName
-     * @param mixed $callback
-     * @param int $priority
-     * @return EventDispatcher
-     */
-    final public function register($eventName, $callback, $priority)
-    {
-        $eventName = trim($eventName);
-
-        if (!isset($this->listeners[$eventName])) {
-            $this->listeners[$eventName] = array();
-        }
-
-        $event = array(
-            'eventName' => $eventName,
-            'callback' => $callback,
-            'priority' => (int)$priority
-        );
-
-        array_push($this->listeners[$eventName], $event);
-
-        if (count($this->listeners[$eventName]) > 1) {
-            usort($this->listeners[$eventName], function ($a, $b)
-                {
-                    if ($a['priority'] == $b['priority']) {
-                        return 0;
-                    }
-
-                    return ($a['priority'] < $b['priority']) ? -1 : 1;
-                }
-            );
-        }
-
-        return $this;
-    }
-
-    /**
-     *
-     * @return array
-     */
-    public function getListeners()
-    {
-        return $this->listeners;
-    }
-
-    /**
-     * @param $eventName
-     * @return array
-     */
-    public function getListenersByEvent($eventName)
-    {
-        if (isset($this->listeners[$eventName])) {
-            return $this->listeners[$eventName];
-        }
-
-        return array();
-    }
-}
+ use Closure;
+ use Psr\Container\ContainerInterface;
+ 
+ final class EventDispatcher implements EventDispatcherInterface
+ {
+     /** @var array<string, array<array{eventName: string, callback: callable, priority: int}>> */
+     private array $listeners = [];
+ 
+     public function __construct(
+         private readonly ContainerInterface $container
+     ) {}
+ 
+     /**
+      * Dispatch an event to all registered listeners
+      *
+      * @param string $eventName The event to dispatch
+      * @param mixed $data Optional data to pass to the event listeners
+      * @return $this
+      */
+     public function dispatch(string $eventName, mixed $data = null): self
+     {
+         foreach ($this->getListenersByEvent($eventName) as $event) {
+             $event['callback']($this->container, $data);
+         }
+ 
+         return $this;
+     }
+ 
+     /**
+      * Remove all listeners for a given event
+      *
+      * @param string $eventName The event name to clear
+      * @return $this
+      */
+     final public function detach(string $eventName): self
+     {
+         unset($this->listeners[$eventName]);
+ 
+         return $this;
+     }
+ 
+     /**
+      * Register an event listener
+      *
+      * @param string $eventName The event to listen for
+      * @param callable|array|string $callback The callback to execute
+      * @param int $priority The priority (higher numbers execute first)
+      * @return $this
+      */
+     final public function register(
+         string $eventName,
+         callable|array|string $callback,
+         int $priority = 0
+     ): self {
+         $eventName = trim($eventName);
+         $this->listeners[$eventName] ??= [];
+ 
+         $this->listeners[$eventName][] = [
+             'eventName' => $eventName,
+             'callback' => $this->normalizeCallback($callback),
+             'priority' => $priority
+         ];
+ 
+         if (count($this->listeners[$eventName]) > 1) {
+             usort(
+                 $this->listeners[$eventName],
+                 fn(array $a, array $b): int => $b['priority'] <=> $a['priority']
+             );
+         }
+ 
+         return $this;
+     }
+ 
+     /**
+      * Get all registered listeners
+      *
+      * @return array<string, array<array{eventName: string, callback: callable, priority: int}>>
+      */
+     public function getListeners(): array
+     {
+         return $this->listeners;
+     }
+ 
+     /**
+      * Get listeners for a specific event
+      *
+      * @param string $eventName The event name
+      * @return array<array{eventName: string, callback: callable, priority: int}>
+      */
+     public function getListenersByEvent(string $eventName): array
+     {
+         return $this->listeners[$eventName] ?? [];
+     }
+ 
+     /**
+      * Normalize different callback formats to a callable
+      */
+     private function normalizeCallback(callable|array|string $callback): callable
+     {
+         return match (true) {
+             is_callable($callback) => $callback,
+             is_string($callback) && str_contains($callback, '::') => explode('::', $callback),
+             is_string($callback) => fn(ContainerInterface $c) => $c->get($callback),
+             default => throw new \InvalidArgumentException('Invalid callback type')
+         };
+     }
+ }

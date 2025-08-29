@@ -29,38 +29,37 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace Mabs\Adapter;
+declare(strict_types=1);
 
+namespace Mabs\Adapter;
 
 use Mabs\Container\Container;
 use Mabs\ServiceAdapterInterface;
 use Mabs\Events;
 use Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeFileSessionHandler;
 use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
-use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
 use Symfony\Component\HttpFoundation\Session\Session;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 
 class SessionServiceAdapter implements ServiceAdapterInterface
 {
-    public function load(Container $container)
+    public function load(ContainerInterface $container): void
     {
-        $container['session.storage.options'] = array();
+        $container['session.storage.options'] = [];
         $container['session.default_locale'] = 'en';
         $container['session.storage.save_path'] = '/tmp';
 
-        $container['session.storage.handler'] = function (Container $c) {
-            return new NativeFileSessionHandler($c['session.storage.save_path']);
-        };
+        $container['session.storage.handler'] = fn(Container $c): NativeFileSessionHandler => 
+            new NativeFileSessionHandler($c['session.storage.save_path']);
 
-        $container['session.storage.native'] = function (Container $c) {
-            return new NativeSessionStorage(
+        $container['session.storage.native'] = fn(Container $c): NativeSessionStorage =>
+            new NativeSessionStorage(
                 $c['session.storage.options'],
                 $c['session.storage.handler']
             );
-        };
 
-        $container['session'] = function (Container $app) {
+        $container['session'] = function (Container $app): Session {
             if (!isset($app['session.storage'])) {
                 $app['session.storage'] = $app['session.storage.native'];
             }
@@ -68,12 +67,12 @@ class SessionServiceAdapter implements ServiceAdapterInterface
         };
     }
 
-    public function boot(Container $container)
+    public function boot(ContainerInterface $container): void
     {
-        $container['event_dispatcher']->register(Events::MABS_ON_BOOT, array($this, 'onMabsBoot'), 128);
+        $container['event_dispatcher']->register(Events::MABS_ON_BOOT, [$this, 'onMabsBoot'], 128);
     }
 
-    public function onMabsBoot(Container $container)
+    public function onMabsBoot(Container $container): void
     {
         $container['request']->setSession($container['session']);
     }
