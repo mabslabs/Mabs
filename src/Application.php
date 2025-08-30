@@ -42,7 +42,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Mabs\Adapter\SessionServiceAdapter;
 
-final class Application
+class Application
 {
     public const VERSION = '3.0.0';
 
@@ -63,7 +63,6 @@ final class Application
         $this->container = new Container();
 
         $this->load();
-        $this->lock();
     }
 
     public function isDebugMode(): bool
@@ -107,6 +106,8 @@ final class Application
                 $this->boot();
             }
 
+            $this->lock();
+
             $response = $this->handleRequest();
             $this->dispatch(Events::MABS_ON_TERMINATE, $response);
 
@@ -125,7 +126,7 @@ final class Application
 
         $this->dispatch(Events::MABS_HANDLE_REQUEST, $request);
 
-        $response = $this->container['router']->handleRequest($request);
+        $response = $this->container['router']->handle($request);
         return $response instanceof Response ? $response : new Response((string)$response, 200);
     }
 
@@ -155,10 +156,7 @@ final class Application
         ?string $routeName = null,
         array $methods = []
     ): self {
-        $route = (new Route())
-            ->setPath($pattern)
-            ->setName($routeName)
-            ->setCallback($callback);
+        $route = new Route($pattern, $callback, $routeName);
 
         $this->container['router']->mount($route, $methods);
         return $this;

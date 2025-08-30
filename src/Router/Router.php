@@ -36,7 +36,7 @@ namespace Mabs\Router;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-final class Router
+class Router
 {
     private array $routeCollection = [];
     private array $routes = [];

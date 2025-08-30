@@ -39,10 +39,11 @@ final class Route
     private mixed $handler;
     private ?string $name = null;
 
-    public function __construct(string $path, mixed $handler)
+    public function __construct(string $path, mixed $handler, ?string $name)
     {
         $this->path = $path;
         $this->handler = $handler;
+        $this->name = $name;
     }
 
     public function path(): string

@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Mabs\Application;
 use Mabs\Container\Container;
 use Mabs\Router\Router;
-use Mabs\Dispatcher\EventDispatcher;
+use Mabs\Dispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use PHPUnit\Framework\TestCase;
@@ -34,7 +34,7 @@ final class ApplicationTest extends TestCase
         // Mock Router
         $mockRouter = $this->createMock(Router::class);
         $mockResponse = new Response('Hello World', 200);
-        $mockRouter->method('handleRequest')->willReturn($mockResponse);
+        $mockRouter->method('handle')->willReturn($mockResponse);
 
         $this->app->getContainer()['router'] = fn() => $mockRouter;
 
@@ -47,7 +47,7 @@ final class ApplicationTest extends TestCase
 
     public function testEventDispatching(): void
     {
-        $mockDispatcher = $this->createMock(EventDispatcher::class);
+        $mockDispatcher = $this->createMock(EventDispatcherInterface::class);
         $mockDispatcher->expects($this->once())
             ->method('dispatch')
             ->with('custom_event', ['key' => 'value'])
