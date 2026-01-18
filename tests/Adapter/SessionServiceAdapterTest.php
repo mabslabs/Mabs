@@ -62,40 +62,32 @@ class SessionServiceAdapterTest extends TestCase
         $this->adapter->load($this->container);
 
         $request = $this->createMock(Request::class);
-        print_r($request->getSession());
+        $request->expects($this->once())
+            ->method('setSession')
+            ->with($this->container['session']);
+
         $this->container['request'] = $request;
         $this->adapter->boot($this->container);
 
         $this->adapter->onMabsBoot($this->container);
-
-        $request->expects($this->once())
-            ->method('setSession')
-            ->with($this->container['session']);
-
-        print_r($request->getSession());
     }
 
     public function testOnMabsBootSetsSessionInRequest(): void
     {
-        // Charge les services de session
         $this->adapter->load($this->container);
 
-        // Crée une fausse requête
         $request = $this->createMock(Request::class);
 
-        // Crée l'événement MABS_ON_BOOT
-        $this->container['request'] = $request;
-        $this->adapter->onMabsBoot($this->container);
-
-        // Vérifie que la session est bien assignée
         $request->expects($this->once())
             ->method('setSession')
             ->with($this->container['session']);
+
+        $this->container['request'] = $request;
+        $this->adapter->onMabsBoot($this->container);
     }
 
     public function testBootEventRegistration(): void
     {
-        // Test que l'événement est bien enregistré
         $this->container['event_dispatcher']->expects($this->once())
             ->method('register')
             ->with(
