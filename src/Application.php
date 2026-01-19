@@ -186,7 +186,7 @@ class Application
 
         foreach ($this->getAdapters() as $adapter) {
             $adapter->load($this->container);
-            $this->adapters->attach($adapter);
+            $this->adapters->offsetSet($adapter);
         }
 
         $this->loaded = true;
